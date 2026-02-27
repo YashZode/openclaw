@@ -11,6 +11,9 @@ import VenueDiscovery from "./routes/VenueDiscovery";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  if (import.meta.env.VITE_DEV_MODE === "true") {
+    return <>{children}</>;
+  }
   if (loading) {
     return null;
   }
@@ -22,7 +25,8 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation();
-  const isFullWidth = location.pathname === "/" || location.pathname === "/home";
+  const isFullWidth =
+    location.pathname === "/" || location.pathname === "/home" || location.pathname === "/discover";
 
   return (
     <div className="min-h-screen bg-navy-900">
@@ -39,6 +43,14 @@ export default function App() {
                   </RequireAuth>
                 }
               />
+              <Route
+                path="/discover"
+                element={
+                  <RequireAuth>
+                    <VenueDiscovery />
+                  </RequireAuth>
+                }
+              />
             </Routes>
           </AnimatePresence>
         </div>
@@ -52,14 +64,6 @@ export default function App() {
                   element={
                     <RequireAuth>
                       <CreateHang />
-                    </RequireAuth>
-                  }
-                />
-                <Route
-                  path="/discover"
-                  element={
-                    <RequireAuth>
-                      <VenueDiscovery />
                     </RequireAuth>
                   }
                 />

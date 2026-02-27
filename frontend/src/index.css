@@ -47,4 +47,20 @@
   .btn-press:active {
     transform: scale(0.97);
   }
+
+  /* Mapbox popup overrides for dark theme */
+  .mapboxgl-popup-content {
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  .mapboxgl-popup-tip {
+    border-top-color: rgb(15 23 42) !important;
+  }
+  .mapboxgl-popup-close-button {
+    color: white !important;
+    font-size: 18px !important;
+    right: 4px !important;
+    top: 4px !important;
+  }
 }

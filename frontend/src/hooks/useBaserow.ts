@@ -55,8 +55,8 @@ export interface BaserowVenue {
   address: string;
   neighborhood: string;
   city: string;
-  lat: number;
-  lon: number;
+  lat: string | number | null;
+  lon: string | number | null;
   hours: string;
   community_mode: boolean;
   owner_telegram_id: string;
