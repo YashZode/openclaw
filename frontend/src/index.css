@@ -63,4 +63,14 @@
     right: 4px !important;
     top: 4px !important;
   }
+
+  /* tldraw whiteboard container */
+  .whiteboard-wrap {
+    height: calc(100vh - 220px);
+    min-height: 480px;
+    background: #0A0F1C;
+  }
+  .whiteboard-wrap .tl-background {
+    background: #0A0F1C !important;
+  }
 }
