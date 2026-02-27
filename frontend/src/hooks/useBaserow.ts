@@ -153,3 +153,33 @@ export function useUserProfile(telegramId: string | undefined) {
     enabled: !!telegramId,
   });
 }
+
+// --- Owner hooks ---
+
+export function useOwnedVenues(telegramId: string | undefined) {
+  const { data, loading, error } = useVenues({ enabled: !!telegramId });
+  const owned = telegramId ? data.filter((v) => v.owner_telegram_id === telegramId) : [];
+  return { data: owned, loading, error, isOwner: !loading && owned.length > 0 };
+}
+
+export function useVenueSessions(venueIds: number[]) {
+  const { data, loading, error } = useQuery<BaserowSession>(TABLES.sessions, {
+    size: 100,
+    enabled: venueIds.length > 0,
+  });
+  const filtered = venueIds.length
+    ? data.filter((s) => s.venue_id?.some((v) => venueIds.includes(v.id)))
+    : [];
+  return { data: filtered, loading, error };
+}
+
+export function useVenueOpenSeats(venueIds: number[]) {
+  const { data, loading, error } = useQuery<BaserowOpenSeat>(TABLES.open_seats, {
+    size: 100,
+    enabled: venueIds.length > 0,
+  });
+  const filtered = venueIds.length
+    ? data.filter((s) => s.venue_id?.some((v) => venueIds.includes(v.id)))
+    : [];
+  return { data: filtered, loading, error };
+}

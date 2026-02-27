@@ -1,10 +1,9 @@
 import type { FeatureCollection, Point } from "geojson";
-import { ChevronLeft, LocateFixed, Search } from "lucide-react";
+import { LocateFixed, Search } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { Source, Layer, Marker, Popup } from "react-map-gl/mapbox";
 import type { MapMouseEvent, MapRef } from "react-map-gl/mapbox";
-import { useNavigate } from "react-router-dom";
 import {
   useVenues,
   useSessions,
@@ -284,7 +283,6 @@ interface SelectedVenue extends VenueInfo {
 }
 
 export default function VenueDiscovery() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const mapRef = useRef<MapRef>(null);
   const [activeLayer, setActiveLayer] = useState<LayerKey>("venues");
@@ -484,7 +482,7 @@ export default function VenueDiscovery() {
   }, [user, selectedVenue, requestTime, requestNotes]);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-[calc(100vh-57px)]">
       <Map
         ref={mapRef}
         initialViewState={{
@@ -674,15 +672,8 @@ export default function VenueDiscovery() {
         )}
       </Map>
 
-      {/* Back button + Locate me */}
+      {/* Locate me */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-1.5 bg-navy-900/80 backdrop-blur-sm rounded-lg px-3 py-2 text-white hover:bg-navy-900 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span className="text-sm font-sans">Back</span>
-        </button>
         <button
           onClick={handleLocateMe}
           disabled={locationStatus === "requesting"}

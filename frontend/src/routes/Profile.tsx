@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Coffee, ChevronLeft, Shield, Loader2 } from "lucide-react";
+import { Coffee, Shield, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserSessions, useCommunityStanding } from "../hooks/useBaserow";
 import { useAuth } from "../lib/auth";
@@ -38,18 +38,6 @@ export default function Profile() {
       exit="exit"
       className="flex flex-col min-h-screen bg-navy-900 relative z-10"
     >
-      {/* Header */}
-      <div className="flex items-center px-6 py-4">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2"
-        >
-          <ChevronLeft className="w-5 h-5 text-navy-400" />
-          <span className="font-sans text-sm text-navy-400">Back</span>
-        </motion.button>
-      </div>
-
       {/* Profile Header */}
       <motion.div
         variants={stagger}

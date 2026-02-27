@@ -2,27 +2,22 @@ import { motion } from "framer-motion";
 import {
   Coffee,
   Compass,
-  BarChart3,
   MapPin,
   Clock,
   Users,
-  LogOut,
   Loader2,
   AlertCircle,
   Armchair,
   CalendarDays,
-  Shield,
   Radio,
   Hand,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../components/Logo";
 import {
   useUserSessions,
   useVenues,
   useOpenSeats,
-  useCommunityStanding,
   type BaserowSession,
   type BaserowVenue,
   type BaserowOpenSeat,
@@ -267,7 +262,7 @@ function OpenSeatCard({
 
 export default function Home() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const telegramId = user?.telegramId;
 
   const {
@@ -277,7 +272,6 @@ export default function Home() {
   } = useUserSessions(telegramId);
   const { data: venues, loading: venuesLoading, error: venuesError } = useVenues();
   const { data: openSeats, loading: seatsLoading } = useOpenSeats();
-  const { data: standing } = useCommunityStanding(telegramId);
 
   const [broadcastingId, setBroadcastingId] = useState<number | null>(null);
   const [rsvpSentId, setRsvpSentId] = useState<number | null>(null);
@@ -285,7 +279,6 @@ export default function Home() {
   const activeSessions = sessions.filter((s) => s.status === "approved" || s.status === "pending");
   const pastSessions = sessions.filter((s) => s.status === "denied");
   const communityVenues = venues.filter((v) => v.community_mode);
-  const userStanding = standing[0];
 
   const handleBroadcast = useCallback(
     async (session: BaserowSession, venue: BaserowVenue | undefined) => {
@@ -345,74 +338,6 @@ export default function Home() {
       exit="exit"
       className="min-h-screen bg-navy-900 relative z-10"
     >
-      {/* ── Header ── */}
-      <header className="border-b border-white/[0.04] bg-slate-deep/50 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Logo size={28} className="text-cyan" />
-              <span className="font-mono text-lg font-bold text-white">3rdSeat</span>
-            </div>
-            <nav className="hidden md:flex items-center gap-1">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan/10 text-cyan">
-                <Coffee className="w-4 h-4" />
-                <span className="font-mono text-xs font-semibold">HOME</span>
-              </button>
-              <button
-                onClick={() => navigate("/discover")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-navy-400 hover:text-white transition-colors"
-              >
-                <Compass className="w-4 h-4" />
-                <span className="font-mono text-xs font-medium">DISCOVER</span>
-              </button>
-              <button
-                onClick={() => navigate("/owner")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-navy-400 hover:text-white transition-colors"
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span className="font-mono text-xs font-medium">STATS</span>
-              </button>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {userStanding && (
-              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-navy-800">
-                <Shield className="w-3.5 h-3.5 text-cyan" />
-                <span className="font-mono text-[11px] text-navy-400">{userStanding.standing}</span>
-              </div>
-            )}
-            <button
-              onClick={() => navigate("/profile")}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-navy-800 transition-colors"
-            >
-              {user?.photoUrl ? (
-                <img src={user.photoUrl} alt="" className="w-7 h-7 rounded-full" />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-navy-700 flex items-center justify-center">
-                  <span className="font-mono text-xs text-navy-400">
-                    {user?.firstName?.[0] || "?"}
-                  </span>
-                </div>
-              )}
-              <span className="hidden sm:block font-sans text-sm text-navy-400">
-                {user?.firstName || "User"}
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                logout();
-                navigate("/");
-              }}
-              className="p-1.5 rounded-lg text-navy-600 hover:text-navy-400 transition-colors"
-              title="Sign out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* ── Main content ── */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Greeting + Quick Actions */}
@@ -557,22 +482,6 @@ export default function Home() {
           </div>
         </motion.div>
       </main>
-
-      {/* ── Mobile bottom nav (visible on small screens only) ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 flex items-center justify-around px-6 py-3 bg-slate-deep border-t border-white/[0.04]">
-        <button className="flex flex-col items-center gap-1">
-          <Coffee className="w-[22px] h-[22px] text-cyan" />
-          <span className="font-mono text-[10px] font-semibold text-cyan">HOME</span>
-        </button>
-        <button onClick={() => navigate("/discover")} className="flex flex-col items-center gap-1">
-          <Compass className="w-[22px] h-[22px] text-navy-600" />
-          <span className="font-mono text-[10px] font-medium text-navy-600">DISCOVER</span>
-        </button>
-        <button onClick={() => navigate("/owner")} className="flex flex-col items-center gap-1">
-          <BarChart3 className="w-[22px] h-[22px] text-navy-600" />
-          <span className="font-mono text-[10px] font-medium text-navy-600">STATS</span>
-        </button>
-      </div>
     </motion.div>
   );
 }

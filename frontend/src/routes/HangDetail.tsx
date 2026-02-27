@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { ChevronLeft, MapPin, Clock, Users, FileText, Loader2, AlertCircle } from "lucide-react";
+import { MapPin, Clock, Users, FileText, Loader2, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useVenues, type BaserowSession, type BaserowVenue } from "../hooks/useBaserow";
 import { fetchRow, TABLES } from "../lib/baserow";
 
@@ -36,7 +36,6 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function HangDetail() {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [session, setSession] = useState<BaserowSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,19 +87,10 @@ export default function HangDetail() {
       className="flex flex-col min-h-screen bg-navy-900 relative z-10"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2"
-        >
-          <ChevronLeft className="w-5 h-5 text-navy-400" />
-          <span className="font-sans text-sm text-navy-400">Back</span>
-        </motion.button>
+      <div className="flex items-center justify-center px-6 py-4">
         <span className="font-sans text-lg font-semibold text-white">
           {loading ? "Loading..." : venueName}
         </span>
-        <div className="w-[50px] h-5" />
       </div>
 
       {loading ? (
