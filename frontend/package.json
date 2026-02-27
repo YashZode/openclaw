@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mapbox/point-geometry": "^1.1.0",
     "framer-motion": "^11.11.0",
     "lucide-react": "^0.444.0",
     "mapbox-gl": "^3.19.0",
