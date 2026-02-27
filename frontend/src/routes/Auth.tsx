@@ -102,8 +102,8 @@ export default function Auth() {
               variants={fadeUp}
               className="font-sans text-base text-navy-400 max-w-md leading-relaxed"
             >
-              Coordinate group work sessions at the best cafes and venues nearby. AI-powered
-              matching, real-time coordination, and community you can count on.
+              Find community work spots, request sessions with venue owners, and broadcast open
+              seats to connect with other solo workers nearby.
             </motion.p>
             <motion.div variants={fadeUp}>
               <TelegramLogin botName={botName} onAuth={handleTelegramAuth} />
@@ -158,18 +158,18 @@ export default function Auth() {
             {[
               {
                 icon: Coffee,
-                title: "Start a Hang",
-                desc: "Tell us when and where you want to work. Set your needs — WiFi, quiet, outlets.",
+                title: "Find a Venue",
+                desc: "Search the map for community work spots near you.",
               },
               {
                 icon: Compass,
-                title: "AI Finds Spots",
-                desc: "We match you with the best venues nearby based on your crew's needs.",
+                title: "Request a Session",
+                desc: "Pick a time, send a request to the venue owner.",
               },
               {
                 icon: Users,
-                title: "Meet & Work",
-                desc: "Vote on a spot, show up, and get into flow with your crew.",
+                title: "Broadcast & Connect",
+                desc: "Share an open seat and meet other solo workers.",
               },
             ].map(({ icon: Icon, title, desc }) => (
               <motion.div

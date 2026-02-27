@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { Coffee, ChevronLeft } from "lucide-react";
+import { Coffee, ChevronLeft, Shield, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useUserSessions, useCommunityStanding } from "../hooks/useBaserow";
+import { useAuth } from "../lib/auth";
 
 const page = {
   initial: { opacity: 0, x: 30 },
@@ -19,6 +21,14 @@ const item = {
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const telegramId = user?.telegramId;
+  const { data: sessions, loading: sessionsLoading } = useUserSessions(telegramId);
+  const { data: standing } = useCommunityStanding(telegramId);
+
+  const userStanding = standing[0];
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "User";
+  const initial = user?.firstName?.[0]?.toUpperCase() || "?";
 
   return (
     <motion.div
@@ -49,40 +59,44 @@ export default function Profile() {
       >
         <motion.div
           variants={item}
-          className="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-cyan-dim"
+          className="flex items-center justify-center w-[72px] h-[72px] rounded-full bg-cyan-dim overflow-hidden"
         >
-          <span className="font-mono text-[28px] font-bold text-cyan">C</span>
+          {user?.photoUrl ? (
+            <img src={user.photoUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <span className="font-mono text-[28px] font-bold text-cyan">{initial}</span>
+          )}
         </motion.div>
         <motion.h1 variants={item} className="font-sans text-[22px] font-semibold text-white">
-          carl
+          {displayName}
         </motion.h1>
-        <motion.span variants={item} className="font-mono text-[13px] text-navy-500">
-          @carl_codes
-        </motion.span>
+        {user?.username && (
+          <motion.span variants={item} className="font-mono text-[13px] text-navy-500">
+            @{user.username}
+          </motion.span>
+        )}
 
         {/* Stats */}
         <motion.div variants={item} className="flex gap-3 w-full pt-2">
-          {[
-            { value: "47", label: "Hangs", accent: true },
-            { value: "12", label: "Venues", accent: false },
-            { value: "4.9", label: "Rating", accent: false },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="flex flex-col items-center gap-1 flex-1 rounded-[10px] card-paper shadow-paper py-4 px-3"
-            >
-              <span
-                className={`font-mono text-xl font-bold ${stat.accent ? "text-cyan" : "text-white"}`}
-              >
-                {stat.value}
+          <div className="flex flex-col items-center gap-1 flex-1 rounded-[10px] card-paper shadow-paper py-4 px-3">
+            <span className="font-mono text-xl font-bold text-cyan">
+              {sessionsLoading ? "..." : sessions.length}
+            </span>
+            <span className="font-sans text-[11px] text-navy-500">Sessions</span>
+          </div>
+          <div className="flex flex-col items-center gap-1 flex-1 rounded-[10px] card-paper shadow-paper py-4 px-3">
+            <div className="flex items-center gap-1">
+              <Shield className="w-4 h-4 text-white" />
+              <span className="font-mono text-xl font-bold text-white">
+                {userStanding?.standing || "—"}
               </span>
-              <span className="font-sans text-[11px] text-navy-500">{stat.label}</span>
             </div>
-          ))}
+            <span className="font-sans text-[11px] text-navy-500">Standing</span>
+          </div>
         </motion.div>
       </motion.div>
 
-      {/* Past Hangs */}
+      {/* Recent Sessions */}
       <motion.div
         variants={stagger}
         initial="initial"
@@ -93,29 +107,41 @@ export default function Profile() {
           variants={item}
           className="font-mono text-[11px] font-semibold text-navy-500 tracking-[2px]"
         >
-          RECENT HANGS
+          RECENT SESSIONS
         </motion.span>
 
-        {[
-          { name: "Coffee & Code", meta: "Today · 3 crew · 2h 15m", link: "/hang/1" },
-          { name: "Houndstooth Focus", meta: "Yesterday · 2 crew · 3h", link: null },
-          { name: "Spokesman Sprint", meta: "Feb 24 · 4 crew · 4h", link: null },
-        ].map((hang) => (
-          <motion.button
-            key={hang.name}
-            variants={item}
-            whileHover={{ x: 2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => hang.link && navigate(hang.link)}
-            className="flex items-center gap-3 w-full rounded-[10px] card-paper shadow-ink py-3.5 px-4 text-left btn-press"
-          >
-            <Coffee className="w-5 h-5 text-cyan" />
-            <div className="flex flex-col gap-0.5 flex-1">
-              <span className="font-sans text-sm font-semibold text-white">{hang.name}</span>
-              <span className="font-sans text-xs text-navy-400">{hang.meta}</span>
-            </div>
-          </motion.button>
-        ))}
+        {sessionsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 text-cyan animate-spin" />
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-8 px-4 rounded-xl card-paper shadow-ink">
+            <Coffee className="w-6 h-6 text-navy-600" />
+            <span className="font-sans text-[13px] text-navy-600">No sessions yet</span>
+          </div>
+        ) : (
+          sessions.slice(0, 10).map((s) => (
+            <motion.button
+              key={s.id}
+              variants={item}
+              whileHover={{ x: 2 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate(`/hang/${s.id}`)}
+              className="flex items-center gap-3 w-full rounded-[10px] card-paper shadow-ink py-3.5 px-4 text-left btn-press"
+            >
+              <Coffee className="w-5 h-5 text-cyan" />
+              <div className="flex flex-col gap-0.5 flex-1">
+                <span className="font-sans text-sm font-semibold text-white">
+                  {s.venue_id?.[0]?.value || "Unknown venue"}
+                </span>
+                <span className="font-sans text-xs text-navy-400">
+                  {s.status}
+                  {s.requested_time ? ` · ${s.requested_time}` : ""}
+                </span>
+              </div>
+            </motion.button>
+          ))
+        )}
       </motion.div>
     </motion.div>
   );

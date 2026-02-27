@@ -1,16 +1,9 @@
 import { motion } from "framer-motion";
-import {
-  ChevronLeft,
-  Radio,
-  CircleCheck,
-  Timer,
-  Wifi,
-  Zap,
-  Volume2,
-  Users,
-  Shield,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ChevronLeft, MapPin, Clock, Users, FileText, Loader2, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useVenues, type BaserowSession, type BaserowVenue } from "../hooks/useBaserow";
+import { fetchRow, TABLES } from "../lib/baserow";
 
 const page = {
   initial: { opacity: 0, x: 30 },
@@ -27,8 +20,64 @@ const item = {
   animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };
 
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    approved: "text-green-400 bg-green-400/10",
+    pending: "text-yellow-400 bg-yellow-400/10",
+    denied: "text-red-400 bg-red-400/10",
+  };
+  return (
+    <span
+      className={`font-mono text-[11px] font-semibold px-3 py-1 rounded-full ${colors[status] || "text-navy-400 bg-navy-700"}`}
+    >
+      {status.toUpperCase()}
+    </span>
+  );
+}
+
 export default function HangDetail() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [session, setSession] = useState<BaserowSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { data: venues } = useVenues();
+
+  useEffect(() => {
+    if (!id) {
+      setError("No session ID provided");
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    fetchRow<BaserowSession>(TABLES.sessions, parseInt(id, 10))
+      .then((data) => {
+        if (!cancelled) {
+          setSession(data);
+          setLoading(false);
+        }
+      })
+      .catch((err: Error) => {
+        if (!cancelled) {
+          setError(err.message);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const venue: BaserowVenue | undefined = session?.venue_id?.[0]
+    ? venues.find((v) => v.id === session.venue_id[0].id)
+    : undefined;
+
+  const venueName = session?.venue_id?.[0]?.value || "Unknown venue";
 
   return (
     <motion.div
@@ -48,171 +97,132 @@ export default function HangDetail() {
           <ChevronLeft className="w-5 h-5 text-navy-400" />
           <span className="font-sans text-sm text-navy-400">Back</span>
         </motion.button>
-        <span className="font-sans text-lg font-semibold text-white">Coffee &amp; Code</span>
+        <span className="font-sans text-lg font-semibold text-white">
+          {loading ? "Loading..." : venueName}
+        </span>
         <div className="w-[50px] h-5" />
       </div>
 
-      {/* Venue Info */}
-      <motion.div
-        variants={stagger}
-        initial="initial"
-        animate="animate"
-        className="flex flex-col gap-3 px-6"
-      >
-        <motion.div
-          variants={item}
-          className="w-full h-[160px] rounded-xl bg-navy-700 flex items-center justify-center overflow-hidden"
-        >
-          <span className="text-navy-500 text-xs font-mono">venue photo</span>
-        </motion.div>
-        <motion.div variants={item} className="flex items-center justify-between w-full">
-          <div className="flex flex-col gap-1">
-            <span className="font-sans text-lg font-semibold text-white">Coffee &amp; Code</span>
-            <span className="font-sans text-[13px] text-navy-400">
-              2300 S Lamar Blvd, Austin TX
-            </span>
-          </div>
-          <motion.div
-            animate={{ opacity: [1, 0.6, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="flex items-center gap-1.5 rounded-md bg-cyan-dim py-1.5 px-3"
-          >
-            <Radio className="w-3.5 h-3.5 text-cyan" />
-            <span className="font-mono text-[11px] font-semibold text-cyan">LIVE</span>
-          </motion.div>
-        </motion.div>
-      </motion.div>
-
-      {/* Crew Section */}
-      <motion.div
-        variants={stagger}
-        initial="initial"
-        animate="animate"
-        className="flex flex-col gap-3 px-6 py-4"
-      >
-        <motion.span
-          variants={item}
-          className="font-mono text-[11px] font-semibold text-navy-500 tracking-[2px]"
-        >
-          CREW · 3/5 CONFIRMED
-        </motion.span>
-
-        {[
-          { initial: "C", name: "carl", info: "Organizer · confirmed", confirmed: true },
-          { initial: "A", name: "alex_dev", info: "confirmed · en route", confirmed: true },
-          { initial: "M", name: "maya_ui", info: "pending · invited 12m ago", confirmed: false },
-        ].map((member) => (
-          <motion.div
-            key={member.name}
-            variants={item}
-            whileHover={{ x: 2 }}
-            className="flex items-center gap-3 w-full rounded-[10px] card-paper shadow-ink py-3 px-4"
-          >
-            <div
-              className={`flex items-center justify-center w-9 h-9 rounded-full ${member.confirmed ? "bg-cyan-mid" : "bg-navy-600"}`}
-            >
-              <span
-                className={`font-mono text-sm font-semibold ${member.confirmed ? "text-cyan" : "text-navy-400"}`}
-              >
-                {member.initial}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 flex-1">
-              <span className="font-sans text-sm font-semibold text-white">{member.name}</span>
-              <span className="font-sans text-xs text-navy-400">{member.info}</span>
-            </div>
-            {member.confirmed ? (
-              <CircleCheck className="w-5 h-5 text-cyan" />
-            ) : (
-              <Timer className="w-5 h-5 text-navy-500" />
-            )}
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Live Status */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col gap-3 px-6 py-2"
-      >
-        <span className="font-mono text-[11px] font-semibold text-navy-500 tracking-[2px]">
-          LIVE STATUS
-        </span>
-        <div className="flex flex-col gap-2.5 w-full rounded-[10px] card-paper shadow-paper p-4">
-          {[
-            {
-              icon: <Wifi className="w-4 h-4 text-navy-400" />,
-              label: "WiFi",
-              value: "85 Mbps",
-              accent: true,
-            },
-            {
-              icon: <Zap className="w-4 h-4 text-navy-400" />,
-              label: "Outlets",
-              value: "12/16 free",
-              accent: false,
-            },
-            {
-              icon: <Volume2 className="w-4 h-4 text-navy-400" />,
-              label: "Noise",
-              value: "Moderate",
-              accent: false,
-            },
-            {
-              icon: <Users className="w-4 h-4 text-navy-400" />,
-              label: "Seats",
-              value: "8 open",
-              accent: true,
-            },
-          ].map((stat) => (
-            <div key={stat.label} className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                {stat.icon}
-                <span className="font-sans text-sm text-navy-400">{stat.label}</span>
-              </div>
-              <span
-                className={`font-mono text-sm font-semibold ${stat.accent ? "text-cyan" : "text-white"}`}
-              >
-                {stat.value}
-              </span>
-            </div>
-          ))}
-          <span className="font-sans text-[10px] text-navy-600">Last ping: 12 min ago</span>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-6 h-6 text-cyan animate-spin" />
         </div>
-      </motion.div>
+      ) : error ? (
+        <div className="flex items-center gap-2 text-red-400 font-sans text-sm py-4 px-6 mx-6 rounded-lg bg-red-400/5">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      ) : session ? (
+        <motion.div
+          variants={stagger}
+          initial="initial"
+          animate="animate"
+          className="flex flex-col gap-4 px-6"
+        >
+          {/* Venue header */}
+          <motion.div variants={item} className="flex items-center justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <span className="font-sans text-lg font-semibold text-white">{venueName}</span>
+              {venue?.address && (
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-navy-500" />
+                  <span className="font-sans text-[13px] text-navy-400">{venue.address}</span>
+                </div>
+              )}
+            </div>
+            <StatusBadge status={session.status} />
+          </motion.div>
 
-      {/* Fallback */}
-      <div className="flex items-center gap-2.5 px-6 py-3">
-        <Shield className="w-4 h-4 text-navy-600" />
-        <span className="font-sans text-xs text-navy-600">Backup: Houndstooth Coffee (0.8 mi)</span>
-      </div>
+          {/* Session details */}
+          <motion.div
+            variants={item}
+            className="flex flex-col gap-3 w-full rounded-[10px] card-paper shadow-paper p-4"
+          >
+            <span className="font-mono text-[11px] font-semibold text-navy-500 tracking-[2px]">
+              SESSION DETAILS
+            </span>
+
+            {session.requested_time && (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-navy-400" />
+                  <span className="font-sans text-sm text-navy-400">Requested Time</span>
+                </div>
+                <span className="font-mono text-sm font-semibold text-white">
+                  {session.requested_time}
+                </span>
+              </div>
+            )}
+
+            {Number(session.guest_requested) > 0 && (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-navy-400" />
+                  <span className="font-sans text-sm text-navy-400">Guests</span>
+                </div>
+                <span className="font-mono text-sm font-semibold text-white">
+                  {session.guest_requested}
+                </span>
+              </div>
+            )}
+
+            {session.notes && (
+              <div className="flex items-start gap-2 w-full">
+                <FileText className="w-4 h-4 text-navy-400 mt-0.5" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-sans text-sm text-navy-400">Notes</span>
+                  <span className="font-sans text-sm text-white">{session.notes}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between w-full pt-1 border-t border-white/[0.04]">
+              <span className="font-sans text-xs text-navy-600">Created</span>
+              <span className="font-mono text-xs text-navy-500">
+                {session.created_at
+                  ? new Date(session.created_at).toLocaleDateString([], {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Venue info if available */}
+          {venue && (
+            <motion.div
+              variants={item}
+              className="flex flex-col gap-3 w-full rounded-[10px] card-paper shadow-paper p-4"
+            >
+              <span className="font-mono text-[11px] font-semibold text-navy-500 tracking-[2px]">
+                VENUE INFO
+              </span>
+              {venue.neighborhood && (
+                <div className="flex items-center justify-between">
+                  <span className="font-sans text-sm text-navy-400">Neighborhood</span>
+                  <span className="font-mono text-sm text-white">{venue.neighborhood}</span>
+                </div>
+              )}
+              {venue.hours && (
+                <div className="flex items-center justify-between">
+                  <span className="font-sans text-sm text-navy-400">Hours</span>
+                  <span className="font-mono text-sm text-white">{venue.hours}</span>
+                </div>
+              )}
+              {venue.community_mode && (
+                <span className="self-start text-[10px] uppercase tracking-wider bg-cyan-500/20 text-cyan-300 rounded-full px-2 py-0.5">
+                  Community Mode
+                </span>
+              )}
+            </motion.div>
+          )}
+        </motion.div>
+      ) : null}
 
       <div className="flex-1" />
-
-      {/* Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        className="flex gap-3 px-6 pt-4 pb-8"
-      >
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center justify-center flex-1 rounded-lg card-paper shadow-ink py-3.5 px-5 btn-press"
-        >
-          <span className="font-sans text-sm font-semibold text-navy-400">Leave</span>
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.02, boxShadow: "0 0 24px rgba(34,211,238,0.15)" }}
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center justify-center gap-2 flex-1 rounded-lg bg-cyan py-3.5 px-5 shadow-glow btn-press"
-        >
-          <Radio className="w-4 h-4 text-navy-900" />
-          <span className="font-sans text-sm font-semibold text-navy-900">Update Status</span>
-        </motion.button>
-      </motion.div>
     </motion.div>
   );
 }

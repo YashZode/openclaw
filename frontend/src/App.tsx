@@ -2,7 +2,6 @@ import { AnimatePresence } from "framer-motion";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./lib/auth";
 import Auth from "./routes/Auth";
-import CreateHang from "./routes/CreateHang";
 import HangDetail from "./routes/HangDetail";
 import Home from "./routes/Home";
 import OwnerHub from "./routes/OwnerHub";
@@ -52,14 +51,7 @@ export default function App() {
           <div className="w-full max-w-[402px] min-h-screen bg-navy-900 relative overflow-hidden paper-grain">
             <AnimatePresence mode="wait">
               <Routes location={location} key={location.pathname}>
-                <Route
-                  path="/create"
-                  element={
-                    <RequireAuth>
-                      <CreateHang />
-                    </RequireAuth>
-                  }
-                />
+                <Route path="/create" element={<Navigate to="/discover" replace />} />
                 <Route
                   path="/hang/:id"
                   element={

@@ -1,5 +1,5 @@
 import type { FeatureCollection, Point } from "geojson";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 import { useCallback, useMemo, useRef, useState } from "react";
 import Map, { Source, Layer, Popup } from "react-map-gl/mapbox";
@@ -12,6 +12,7 @@ import {
   type BaserowSession,
 } from "../hooks/useBaserow";
 import { useAuth } from "../lib/auth";
+import { createRow, TABLES } from "../lib/baserow";
 import { sendVenueInfo, requestSession, type VenueInfo } from "../lib/telegram";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -277,6 +278,7 @@ function getCenterFromTimezone(): { lat: number; lon: number; zoom: number } {
 const userCenter = getCenterFromTimezone();
 
 interface SelectedVenue extends VenueInfo {
+  id: number;
   lon: number;
   lat: number;
 }
@@ -289,6 +291,12 @@ export default function VenueDiscovery() {
   const [selectedVenue, setSelectedVenue] = useState<SelectedVenue | null>(null);
   const [infoSent, setInfoSent] = useState(false);
   const [sessionSent, setSessionSent] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [requestMode, setRequestMode] = useState(false);
+  const [requestTime, setRequestTime] = useState("");
+  const [requestNotes, setRequestNotes] = useState("");
+  const [requestSending, setRequestSending] = useState(false);
 
   const { data: venues } = useVenues();
   const { data: sessions } = useSessions();
@@ -308,6 +316,44 @@ export default function VenueDiscovery() {
   const venueGeo = useMemo(() => venuesToGeoJSON(venues), [venues]);
   const checkinGeo = useMemo(() => checkinsToGeoJSON(sessions, venueMap), [sessions, venueMap]);
   const neighborhoodGeo = useMemo(() => neighborhoodsToGeoJSON(venues), [venues]);
+
+  // Search filter
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [];
+    }
+    const q = searchQuery.toLowerCase();
+    return venues
+      .filter(
+        (v) =>
+          hasCoords(v) &&
+          (v.name?.toLowerCase().includes(q) || v.neighborhood?.toLowerCase().includes(q)),
+      )
+      .slice(0, 5);
+  }, [venues, searchQuery]);
+
+  const handleSearchSelect = useCallback((v: BaserowVenue) => {
+    const lat = parseLat(v);
+    const lon = parseLon(v);
+    mapRef.current?.flyTo({ center: [lon, lat], zoom: 14 });
+    setSelectedVenue({
+      id: v.id,
+      name: v.name,
+      address: v.address,
+      neighborhood: v.neighborhood,
+      hours: v.hours ?? "",
+      community_mode: v.community_mode,
+      owner_telegram_id: v.owner_telegram_id,
+      notes: v.Notes ?? "",
+      lon,
+      lat,
+    });
+    setSearchQuery("");
+    setSearchFocused(false);
+    setInfoSent(false);
+    setSessionSent(false);
+    setRequestMode(false);
+  }, []);
 
   const handleMapClick = useCallback((e: MapMouseEvent) => {
     const map = mapRef.current?.getMap();
@@ -329,6 +375,7 @@ export default function VenueDiscovery() {
     const p = f.properties!;
 
     setSelectedVenue({
+      id: typeof p.id === "string" ? parseInt(p.id, 10) : p.id,
       name: p.name,
       address: p.address,
       neighborhood: p.neighborhood,
@@ -341,6 +388,7 @@ export default function VenueDiscovery() {
     });
     setInfoSent(false);
     setSessionSent(false);
+    setRequestMode(false);
   }, []);
 
   const handleRequestInfo = useCallback(() => {
@@ -352,14 +400,39 @@ export default function VenueDiscovery() {
     setTimeout(() => setInfoSent(false), 2000);
   }, [user, selectedVenue]);
 
-  const handleRequestSession = useCallback(() => {
+  const handleEnterRequestMode = useCallback(() => {
+    setRequestMode(true);
+    setRequestTime("");
+    setRequestNotes("");
+  }, []);
+
+  const handleSendRequest = useCallback(async () => {
     if (!user?.telegramId || !selectedVenue) {
       return;
     }
-    setSessionSent(true);
-    void requestSession(user.telegramId, user.firstName, selectedVenue);
-    setTimeout(() => setSessionSent(false), 2000);
-  }, [user, selectedVenue]);
+    setRequestSending(true);
+    try {
+      await createRow(TABLES.sessions, {
+        user_telegram_id: user.telegramId,
+        venue_id: [selectedVenue.id],
+        requested_time: requestTime,
+        status: "pending",
+        notes: requestNotes,
+        created_at: new Date().toISOString(),
+      });
+      await requestSession(user.telegramId, user.firstName, selectedVenue, requestTime);
+      setSessionSent(true);
+      setTimeout(() => {
+        setSelectedVenue(null);
+        setSessionSent(false);
+        setRequestMode(false);
+      }, 2000);
+    } catch (err) {
+      console.error("[3rdSeat] Session request failed:", err);
+    } finally {
+      setRequestSending(false);
+    }
+  }, [user, selectedVenue, requestTime, requestNotes]);
 
   return (
     <div className="relative w-full h-screen">
@@ -431,45 +504,110 @@ export default function VenueDiscovery() {
             maxWidth="280px"
           >
             <div className="card-paper rounded-xl p-4 font-sans text-white min-w-[240px]">
-              <h3 className="text-base font-semibold mb-1">{selectedVenue.name}</h3>
-              <p className="text-xs text-white/60 mb-2">
-                {selectedVenue.neighborhood}
-                {selectedVenue.address ? `, ${selectedVenue.address}` : ""}
-              </p>
-
-              {selectedVenue.hours && (
-                <p className="text-xs text-white/50 mb-1">Hours: {selectedVenue.hours}</p>
-              )}
-
-              {selectedVenue.community_mode && (
-                <span className="inline-block text-[10px] uppercase tracking-wider bg-cyan-500/20 text-cyan-300 rounded-full px-2 py-0.5 mb-2">
-                  Community Mode
-                </span>
-              )}
-
-              {selectedVenue.notes && (
-                <p className="text-xs text-white/40 italic mb-3">{selectedVenue.notes}</p>
-              )}
-
-              {user?.telegramId ? (
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={handleRequestInfo}
-                    disabled={infoSent}
-                    className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-60"
-                  >
-                    {infoSent ? "Sent!" : "Request Info"}
-                  </button>
-                  <button
-                    onClick={handleRequestSession}
-                    disabled={sessionSent}
-                    className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-navy-900 font-semibold transition-colors disabled:opacity-60"
-                  >
-                    {sessionSent ? "Sent!" : "Request Session"}
-                  </button>
+              {sessionSent ? (
+                <div className="flex flex-col items-center gap-2 py-4">
+                  <span className="text-cyan text-lg font-semibold">Request Sent!</span>
+                  <span className="text-xs text-white/50">
+                    The venue owner will review your request.
+                  </span>
+                </div>
+              ) : requestMode ? (
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-base font-semibold">{selectedVenue.name}</h3>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-wider text-white/50">
+                      Preferred time
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Today 2-5pm"
+                      value={requestTime}
+                      onChange={(e) => setRequestTime(e.target.value)}
+                      className="w-full rounded-lg input-paper py-2 px-3 text-xs bg-transparent text-white placeholder:text-white/30 outline-none"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-wider text-white/50">
+                      Notes
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Need WiFi and outlets"
+                      value={requestNotes}
+                      onChange={(e) => setRequestNotes(e.target.value)}
+                      className="w-full rounded-lg input-paper py-2 px-3 text-xs bg-transparent text-white placeholder:text-white/30 outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setRequestMode(false)}
+                      className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-white/10 hover:bg-white/20 text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSendRequest}
+                      disabled={requestSending}
+                      className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-navy-900 font-semibold transition-colors disabled:opacity-60"
+                    >
+                      {requestSending ? "Sending..." : "Send Request"}
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <p className="text-xs text-white/40 mt-2">Log in to request info or sessions.</p>
+                <>
+                  <h3 className="text-base font-semibold mb-1">{selectedVenue.name}</h3>
+                  <p className="text-xs text-white/60 mb-2">
+                    {selectedVenue.neighborhood}
+                    {selectedVenue.address ? `, ${selectedVenue.address}` : ""}
+                  </p>
+
+                  {selectedVenue.hours && (
+                    <p className="text-xs text-white/50 mb-1">Hours: {selectedVenue.hours}</p>
+                  )}
+
+                  {selectedVenue.community_mode ? (
+                    <span className="inline-block text-[10px] uppercase tracking-wider bg-cyan-500/20 text-cyan-300 rounded-full px-2 py-0.5 mb-2">
+                      Community Mode
+                    </span>
+                  ) : (
+                    <span className="inline-block text-[10px] uppercase tracking-wider bg-white/5 text-white/40 rounded-full px-2 py-0.5 mb-2">
+                      Community Mode: Off
+                    </span>
+                  )}
+
+                  {selectedVenue.notes && (
+                    <p className="text-xs text-white/40 italic mb-3">{selectedVenue.notes}</p>
+                  )}
+
+                  {user?.telegramId ? (
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={handleRequestInfo}
+                        disabled={infoSent}
+                        className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-60"
+                      >
+                        {infoSent ? "Sent!" : "Request Info"}
+                      </button>
+                      {selectedVenue.community_mode ? (
+                        <button
+                          onClick={handleEnterRequestMode}
+                          className="flex-1 btn-press text-xs font-medium rounded-lg px-3 py-2 bg-cyan-500 hover:bg-cyan-400 text-navy-900 font-semibold transition-colors"
+                        >
+                          Request Session
+                        </button>
+                      ) : (
+                        <span className="flex-1 text-xs text-center text-white/30 py-2">
+                          Not accepting sessions
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-white/40 mt-2">
+                      Log in to request info or sessions.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </Popup>
@@ -500,6 +638,38 @@ export default function VenueDiscovery() {
             {LAYER_LABELS[key]}
           </button>
         ))}
+      </div>
+
+      {/* Search bar */}
+      <div className="absolute top-4 right-4 z-10 w-64">
+        <div className="flex items-center gap-2 bg-navy-900/80 backdrop-blur-sm rounded-lg px-3 py-2">
+          <Search className="w-4 h-4 text-white/50 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search venues..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 outline-none font-sans"
+          />
+        </div>
+        {searchFocused && searchResults.length > 0 && (
+          <div className="mt-1 bg-navy-900/90 backdrop-blur-sm rounded-lg overflow-hidden shadow-lg">
+            {searchResults.map((v) => (
+              <button
+                key={v.id}
+                onMouseDown={() => handleSearchSelect(v)}
+                className="w-full text-left px-3 py-2 hover:bg-white/10 transition-colors"
+              >
+                <span className="text-sm text-white font-sans">{v.name}</span>
+                {v.neighborhood && (
+                  <span className="text-xs text-white/40 ml-2 font-sans">{v.neighborhood}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

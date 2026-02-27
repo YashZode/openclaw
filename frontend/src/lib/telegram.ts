@@ -60,7 +60,10 @@ export async function requestSession(
   userChatId: string,
   userName: string,
   venue: VenueInfo,
+  preferredTime?: string,
 ): Promise<void> {
+  const timeInfo = preferredTime ? `\nPreferred time: ${preferredTime}` : "";
+
   // Notify venue owner
   if (venue.owner_telegram_id) {
     try {
@@ -69,7 +72,7 @@ export async function requestSession(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: venue.owner_telegram_id,
-          text: `🔔 New session request!\n\n${userName} wants to work at <b>${venue.name}</b>.\nCheck 3rdSeat to approve.`,
+          text: `🔔 New session request!\n\n${userName} wants to work at <b>${venue.name}</b>.${timeInfo}\nCheck 3rdSeat to approve.`,
           parse_mode: "HTML",
         }),
       });
@@ -85,7 +88,7 @@ export async function requestSession(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: userChatId,
-        text: `✅ Session request sent to <b>${venue.name}</b>!\n\nThe venue owner will review your request. You'll be notified when they respond.`,
+        text: `✅ Session request sent to <b>${venue.name}</b>!${timeInfo}\n\nThe venue owner will review your request. You'll be notified when they respond.`,
         parse_mode: "HTML",
       }),
     });
