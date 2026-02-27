@@ -14,7 +14,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/3rdseat-frontend
+  IMAGE_NAME: yashzode/3rdseat-frontend
 
 jobs:
   build-and-deploy:
