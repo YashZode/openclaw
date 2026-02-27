@@ -12,6 +12,7 @@ RUN npm run build
 
 # Stage 2: Serve with Caddy (auto-TLS via Let's Encrypt)
 FROM caddy:2-alpine
+LABEL org.opencontainers.image.source="https://github.com/YashZode/openclaw"
 COPY --from=builder /app/dist /srv
 COPY Caddyfile /etc/caddy/Caddyfile
 EXPOSE 80 443
