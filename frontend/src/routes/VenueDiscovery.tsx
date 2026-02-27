@@ -2,7 +2,7 @@ import type { FeatureCollection, Point } from "geojson";
 import { ChevronLeft, LocateFixed, Search } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Map, { Source, Layer, Popup } from "react-map-gl/mapbox";
+import Map, { Source, Layer, Marker, Popup } from "react-map-gl/mapbox";
 import type { MapMouseEvent, MapRef } from "react-map-gl/mapbox";
 import { useNavigate } from "react-router-dom";
 import {
@@ -300,6 +300,7 @@ export default function VenueDiscovery() {
   const [locationStatus, setLocationStatus] = useState<
     "idle" | "requesting" | "granted" | "denied"
   >("idle");
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   // Request browser geolocation on mount
   useEffect(() => {
@@ -310,6 +311,7 @@ export default function VenueDiscovery() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocationStatus("granted");
+        setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         mapRef.current?.flyTo({
           center: [pos.coords.longitude, pos.coords.latitude],
           zoom: 13,
@@ -331,6 +333,7 @@ export default function VenueDiscovery() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocationStatus("granted");
+        setUserLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         mapRef.current?.flyTo({
           center: [pos.coords.longitude, pos.coords.latitude],
           zoom: 13,
@@ -538,6 +541,17 @@ export default function VenueDiscovery() {
             layout={{ visibility: activeLayer === "neighborhoods" ? "visible" : "none" }}
           />
         </Source>
+
+        {/* User location pin */}
+        {userLocation && (
+          <Marker longitude={userLocation.lon} latitude={userLocation.lat} anchor="center">
+            <div className="relative flex items-center justify-center">
+              <div className="absolute w-16 h-16 rounded-full bg-blue-500/20 animate-ping" />
+              <div className="absolute w-10 h-10 rounded-full bg-blue-500/15" />
+              <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg" />
+            </div>
+          </Marker>
+        )}
 
         {/* Venue detail popup */}
         {selectedVenue && (
