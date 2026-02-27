@@ -65,6 +65,7 @@ import {
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "./external-link.ts";
 import { icons } from "./icons.ts";
 import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
+import { isTelegramAuthValid } from "./thirdseat-auth.ts";
 import { renderAgents } from "./views/agents.ts";
 import { renderChannels } from "./views/channels.ts";
 import { renderChat } from "./views/chat.ts";
@@ -79,6 +80,8 @@ import { renderNodes } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
 import { renderSkills } from "./views/skills.ts";
+import { renderThirdSeatDashboard } from "./views/thirdseat-dashboard.ts";
+import { renderThirdSeatLogin } from "./views/thirdseat-login.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -137,6 +140,26 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
 }
 
 export function renderApp(state: AppViewState) {
+  // ── 3rdSeat routing guard ──
+  if (state.appMode === "thirdseat") {
+    if (!state.telegramUser || !isTelegramAuthValid(state.telegramUser)) {
+      return renderThirdSeatLogin({
+        basePath: state.basePath ?? "",
+        switchToControlMode: () => state.switchToControlMode(),
+      });
+    }
+    return renderThirdSeatDashboard({
+      telegramUser: state.telegramUser,
+      dashboardLoading: state.dashboardLoading,
+      dashboardError: state.dashboardError,
+      dashboardSessions: state.dashboardSessions,
+      dashboardVenues: state.dashboardVenues,
+      dashboardOpenSeats: state.dashboardOpenSeats,
+      handleTelegramLogout: () => state.handleTelegramLogout(),
+      switchToControlMode: () => state.switchToControlMode(),
+    });
+  }
+
   const openClawVersion =
     (typeof state.hello?.server?.version === "string" && state.hello.server.version.trim()) ||
     state.updateAvailable?.currentVersion ||

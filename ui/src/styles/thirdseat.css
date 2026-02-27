@@ -1,0 +1,251 @@
+/* ── 3rdSeat Login ── */
+
+.thirdseat-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg) 0%, #1a1028 50%, var(--bg) 100%);
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.thirdseat-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  animation: thirdseat-rise 0.6s ease-out both;
+}
+
+.thirdseat-brand-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-glow);
+}
+
+.thirdseat-brand-logo img {
+  width: 48px;
+  height: 48px;
+}
+
+.thirdseat-brand-title {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  letter-spacing: 0.04em;
+}
+
+.thirdseat-brand-sub {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.thirdseat-login-widget {
+  animation: thirdseat-rise 0.6s ease-out 0.15s both;
+}
+
+.thirdseat-login-footer {
+  animation: thirdseat-rise 0.6s ease-out 0.3s both;
+  font-size: 0.85rem;
+}
+
+.thirdseat-login-footer a {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.thirdseat-login-footer a:hover {
+  color: var(--accent);
+}
+
+/* ── 3rdSeat Dashboard ── */
+
+.thirdseat-dashboard {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.thirdseat-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.thirdseat-user-bar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--accent-subtle);
+}
+
+.thirdseat-user-bar-name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--text-strong);
+  flex: 1;
+}
+
+.thirdseat-user-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.thirdseat-user-bar-actions a,
+.thirdseat-user-bar-actions button {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+  text-decoration: none;
+}
+
+.thirdseat-user-bar-actions a:hover,
+.thirdseat-user-bar-actions button:hover {
+  color: var(--text-strong);
+  background: var(--bg-hover);
+}
+
+.thirdseat-content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.thirdseat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.thirdseat-section {
+  animation: thirdseat-rise 0.5s ease-out both;
+}
+
+.thirdseat-section:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.thirdseat-section:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.thirdseat-section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+.thirdseat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.thirdseat-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.thirdseat-card-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-strong);
+  margin-bottom: 0.25rem;
+}
+
+.thirdseat-card-sub {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.thirdseat-card-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.thirdseat-card-meta .label {
+  color: var(--muted-strong);
+}
+
+.thirdseat-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 1rem 0.25rem;
+}
+
+.thirdseat-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.thirdseat-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  padding: 1rem 0.25rem;
+}
+
+/* ── Animation ── */
+
+@keyframes thirdseat-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 640px) {
+  .thirdseat-brand-title {
+    font-size: 1.75rem;
+  }
+  .thirdseat-grid {
+    grid-template-columns: 1fr;
+  }
+  .thirdseat-user-bar {
+    padding: 0.5rem 1rem;
+  }
+  .thirdseat-content {
+    padding: 1rem;
+  }
+}

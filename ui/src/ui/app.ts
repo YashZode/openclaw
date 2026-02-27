@@ -58,10 +58,18 @@ import type { DevicePairingList } from "./controllers/devices.ts";
 import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
+import { loadDashboardData as loadDashboardDataInternal } from "./controllers/thirdseat-data.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
 import type { Tab } from "./navigation.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
 import type { ResolvedTheme, ThemeMode } from "./theme.ts";
+import {
+  loadTelegramAuth,
+  saveTelegramAuth,
+  clearTelegramAuth,
+  registerTelegramCallback,
+  type TelegramUser,
+} from "./thirdseat-auth.ts";
 import type {
   AgentsListResult,
   AgentsFilesListResult,
@@ -111,6 +119,16 @@ function resolveOnboardingMode(): boolean {
 export class OpenClawApp extends LitElement {
   private i18nController = new I18nController(this);
   clientInstanceId = generateUUID();
+
+  // 3rdSeat state
+  @state() telegramUser: TelegramUser | null = loadTelegramAuth();
+  @state() appMode: "thirdseat" | "control" = "thirdseat";
+  @state() dashboardLoading = false;
+  @state() dashboardError: string | null = null;
+  @state() dashboardSessions: unknown[] = [];
+  @state() dashboardVenues: unknown[] = [];
+  @state() dashboardOpenSeats: unknown[] = [];
+
   @state() settings: UiSettings = loadSettings();
   constructor() {
     super();
@@ -395,6 +413,7 @@ export class OpenClawApp extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
+    registerTelegramCallback((user) => this.handleTelegramLogin(user));
     handleConnected(this as unknown as Parameters<typeof handleConnected>[0]);
   }
 
@@ -608,6 +627,46 @@ export class OpenClawApp extends LitElement {
     const newRatio = Math.max(0.4, Math.min(0.7, ratio));
     this.splitRatio = newRatio;
     this.applySettings({ ...this.settings, splitRatio: newRatio });
+  }
+
+  // ── 3rdSeat handlers ──
+
+  handleTelegramLogin(user: TelegramUser) {
+    saveTelegramAuth(user);
+    this.telegramUser = user;
+    void this.loadDashboardData();
+  }
+
+  handleTelegramLogout() {
+    clearTelegramAuth();
+    this.telegramUser = null;
+    this.dashboardSessions = [];
+    this.dashboardVenues = [];
+    this.dashboardOpenSeats = [];
+    this.dashboardError = null;
+  }
+
+  switchToControlMode() {
+    this.appMode = "control";
+  }
+
+  async loadDashboardData() {
+    if (!this.telegramUser) {
+      return;
+    }
+    this.dashboardLoading = true;
+    this.dashboardError = null;
+    try {
+      const host = this.settings.gatewayUrl || window.location.origin;
+      const data = await loadDashboardDataInternal(host, this.telegramUser);
+      this.dashboardSessions = data.sessions;
+      this.dashboardVenues = data.venues;
+      this.dashboardOpenSeats = data.openSeats;
+    } catch (err) {
+      this.dashboardError = String(err);
+    } finally {
+      this.dashboardLoading = false;
+    }
   }
 
   render() {

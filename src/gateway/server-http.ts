@@ -60,6 +60,7 @@ import { handleOpenAiHttpRequest } from "./openai-http.js";
 import { handleOpenResponsesHttpRequest } from "./openresponses-http.js";
 import { GATEWAY_CLIENT_MODES, normalizeGatewayClientMode } from "./protocol/client-info.js";
 import type { GatewayWsClient } from "./server/ws-types.js";
+import { handleThirdSeatRequest } from "./thirdseat-api.js";
 import { handleToolsInvokeHttpRequest } from "./tools-invoke-http.js";
 
 type SubsystemLogger = ReturnType<typeof createSubsystemLogger>;
@@ -424,6 +425,7 @@ export function createGatewayHttpServer(opts: {
   /** Optional rate limiter for auth brute-force protection. */
   rateLimiter?: AuthRateLimiter;
   tlsOptions?: TlsOptions;
+  thirdSeatOpts?: { botToken: string; baserowToken: string; baserowUrl?: string };
 }): HttpServer {
   const {
     canvasHost,
@@ -472,6 +474,9 @@ export function createGatewayHttpServer(opts: {
       }
       const requestPath = new URL(req.url ?? "/", "http://localhost").pathname;
       if (await handleHooksRequest(req, res)) {
+        return;
+      }
+      if (opts.thirdSeatOpts && handleThirdSeatRequest(req, res, opts.thirdSeatOpts)) {
         return;
       }
       if (

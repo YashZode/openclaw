@@ -32,6 +32,15 @@ services:
         "18789",
       ]
 
+  ollama-proxy:
+    image: caddy:2-alpine
+    container_name: ollama-proxy
+    restart: unless-stopped
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        caddy reverse-proxy --from :11434 --to https://ollama.com --header-up "Authorization: Bearer ${OLLAMA_API_KEY}" --header-up "Host: ollama.com"
+
   thirdseat-frontend:
     build:
       context: ./frontend

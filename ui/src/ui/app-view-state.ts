@@ -10,6 +10,7 @@ import type { Tab } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
 import type { ThemeMode } from "./theme.ts";
+import type { TelegramUser } from "./thirdseat-auth.ts";
 import type {
   AgentsListResult,
   AgentsFilesListResult,
@@ -45,6 +46,19 @@ import type { NostrProfileFormState } from "./views/channels.nostr-profile-form.
 import type { SessionLogEntry } from "./views/usage.ts";
 
 export type AppViewState = {
+  // 3rdSeat state
+  telegramUser: TelegramUser | null;
+  appMode: "thirdseat" | "control";
+  dashboardLoading: boolean;
+  dashboardError: string | null;
+  dashboardSessions: unknown[];
+  dashboardVenues: unknown[];
+  dashboardOpenSeats: unknown[];
+  handleTelegramLogin: (user: TelegramUser) => void;
+  handleTelegramLogout: () => void;
+  switchToControlMode: () => void;
+  loadDashboardData: () => Promise<void>;
+
   settings: UiSettings;
   password: string;
   tab: Tab;

@@ -120,6 +120,16 @@ export async function createGatewayRuntimeState(params: {
   const httpServers: HttpServer[] = [];
   const httpBindHosts: string[] = [];
   for (const host of bindHosts) {
+    const thirdSeatBotToken = process.env.TELEGRAM_BOT_TOKEN;
+    const thirdSeatBaserowToken = process.env.BASEROW_TOKEN;
+    const thirdSeatOpts =
+      thirdSeatBotToken && thirdSeatBaserowToken
+        ? {
+            botToken: thirdSeatBotToken,
+            baserowToken: thirdSeatBaserowToken,
+            baserowUrl: process.env.BASEROW_URL || undefined,
+          }
+        : undefined;
     const httpServer = createGatewayHttpServer({
       canvasHost,
       clients,
@@ -135,6 +145,7 @@ export async function createGatewayRuntimeState(params: {
       resolvedAuth: params.resolvedAuth,
       rateLimiter: params.rateLimiter,
       tlsOptions: params.gatewayTls?.enabled ? params.gatewayTls.tlsOptions : undefined,
+      thirdSeatOpts,
     });
     try {
       await listenGatewayHttpServer({
