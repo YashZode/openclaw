@@ -43,14 +43,7 @@ export default function App() {
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/discover"
-                element={
-                  <RequireAuth>
-                    <VenueDiscovery />
-                  </RequireAuth>
-                }
-              />
+              <Route path="/discover" element={<VenueDiscovery />} />
             </Routes>
           </AnimatePresence>
         </div>
