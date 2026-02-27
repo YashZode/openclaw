@@ -1,7 +1,7 @@
 import type { FeatureCollection, Point } from "geojson";
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft, LocateFixed, Search } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { Source, Layer, Popup } from "react-map-gl/mapbox";
 import type { MapMouseEvent, MapRef } from "react-map-gl/mapbox";
 import { useNavigate } from "react-router-dom";
@@ -297,6 +297,52 @@ export default function VenueDiscovery() {
   const [requestTime, setRequestTime] = useState("");
   const [requestNotes, setRequestNotes] = useState("");
   const [requestSending, setRequestSending] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "requesting" | "granted" | "denied"
+  >("idle");
+
+  // Request browser geolocation on mount
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      return;
+    }
+    setLocationStatus("requesting");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationStatus("granted");
+        mapRef.current?.flyTo({
+          center: [pos.coords.longitude, pos.coords.latitude],
+          zoom: 13,
+          duration: 1500,
+        });
+      },
+      () => {
+        setLocationStatus("denied");
+      },
+      { enableHighAccuracy: false, timeout: 10000 },
+    );
+  }, []);
+
+  const handleLocateMe = useCallback(() => {
+    if (!navigator.geolocation) {
+      return;
+    }
+    setLocationStatus("requesting");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationStatus("granted");
+        mapRef.current?.flyTo({
+          center: [pos.coords.longitude, pos.coords.latitude],
+          zoom: 13,
+          duration: 1500,
+        });
+      },
+      () => {
+        setLocationStatus("denied");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }, []);
 
   const { data: venues } = useVenues();
   const { data: sessions } = useSessions();
@@ -614,14 +660,28 @@ export default function VenueDiscovery() {
         )}
       </Map>
 
-      {/* Back button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 z-10 flex items-center gap-1.5 bg-navy-900/80 backdrop-blur-sm rounded-lg px-3 py-2 text-white hover:bg-navy-900 transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        <span className="text-sm font-sans">Back</span>
-      </button>
+      {/* Back button + Locate me */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 bg-navy-900/80 backdrop-blur-sm rounded-lg px-3 py-2 text-white hover:bg-navy-900 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-sm font-sans">Back</span>
+        </button>
+        <button
+          onClick={handleLocateMe}
+          disabled={locationStatus === "requesting"}
+          className="flex items-center gap-1.5 bg-navy-900/80 backdrop-blur-sm rounded-lg px-3 py-2 text-white hover:bg-navy-900 transition-colors disabled:opacity-50"
+        >
+          <LocateFixed
+            className={`w-4 h-4 ${locationStatus === "requesting" ? "animate-pulse" : locationStatus === "granted" ? "text-cyan" : ""}`}
+          />
+          <span className="text-sm font-sans">
+            {locationStatus === "requesting" ? "Locating..." : "My Location"}
+          </span>
+        </button>
+      </div>
 
       {/* Layer toggle bar */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex gap-1 bg-navy-900/80 backdrop-blur-sm rounded-xl p-1">
